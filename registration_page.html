@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-md p-8 space-y-8 bg-gray-800 rounded-2xl shadow-lg">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-bold tracking-tight">
+                Create your Account
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-400">
+                Step 1: Register your email and password
+            </p>
+        </div>
+        
+        <form id="register-form" class="space-y-6">
+            <!-- Error Message -->
+            <div id="error-message" class="hidden text-sm text-center text-red-400 p-3 bg-red-900 bg-opacity-30 rounded-lg">
+            </div>
+            
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-300 mb-1">Email address</label>
+                <input id="email" name="email" type="email" autocomplete="email" required
+                       class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                <input id="password" name="password" type="password" autocomplete="new-password" required
+                       class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div>
+                <label for="confirm-password" class="block text-sm font-medium text-gray-300 mb-1">Confirm Password</label>
+                <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" required
+                       class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div>
+                <button type="submit" id="register-btn"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    Register
+                </button>
+            </div>
+        </form>
+
+        <p class="text-sm text-center text-gray-400">
+            Already have an account?
+            <a href="login.html" class="font-medium text-blue-400 hover:text-blue-300">
+                Sign in
+            </a>
+        </p>
+    </div>
+
+    <script>
+        const form = document.getElementById('register-form');
+        const errorDiv = document.getElementById('error-message');
+        const registerBtn = document.getElementById('register-btn');
+        const API_BASE_URL = 'http://localhost:5000'; // Make sure this matches your API
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = '';
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'Passwords do not match.';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Registering...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'An unknown error occurred');
+                }
+
+                // SUCCESS!
+                // Registration is done, now send them to fill out their profile.
+                alert('Registration successful! Please fill out your profile.');
+                // This is the file from our first step!
+                window.location.href = 'profile-setup.html';
+
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Register';
+            }
+        });
+    </script>
+
+</body>
+</html>
