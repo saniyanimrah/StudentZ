@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <script src="https://cdn/tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .edit-btn { display: none; }
+        body.is-owner .edit-btn { display: inline-flex; }
+        .modal { display: none; }
+        .modal.is-open { display: flex; }
+        /* Style for the "Copied!" tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 80px;
+            background-color: #1f2937; /* bg-gray-800 */
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -40px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1f2937 transparent transparent transparent;
+        }
+        .tooltip.show .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100">
+
+    <!-- Header (same as home.html, for consistency) -->
+    <header class="bg-gray-800 shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="./home.html" class="text-2xl font-bold text-blue-400">CampusConnect</a>
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <a href="./home.html" class="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-700" aria-label="Home">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" /><path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" /></svg>
+                    </a>
+                    <!-- Profile Icon -->
+                    <div class="relative">
+                        <button type="button" class="flex items-center rounded-full" id="nav-profile-btn">
+                            <img id="nav-profile-pic" class="h-9 w-9 rounded-full bg-gray-600" src="https://placehold.co/100x100/E0E7FF/4F46E5?text=..." alt="User profile picture">
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Profile Content -->
+    <main class="container mx-auto max-w-5xl p-4 pt-6">
+        
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-20">
+            <p class="text-gray-400">Loading profile...</p>
+        </div>
+
+        <!-- Profile Header -->
+        <div id="profile-content" class="hidden"> <!-- 'hidden' class removed by JS when loaded -->
+            <div class="bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8 relative">
+                <!-- Profile Picture -->
+                <div class="flex flex-col md:flex-row items-center md:items-start md:space-x-8">
+                    <div class="relative mb-4 md:mb-0">
+                        <img id="profilePic" class="h-32 w-32 rounded-full bg-gray-700 shadow-md ring-4 ring-gray-600" 
+                             src="https://placehold.co/150x150/4F46E5/FFFFFF?text=..." alt="Profile Picture">
+                        <button class="edit-btn absolute bottom-0 right-0 p-2 bg-blue-600 hover:bg-blue-700 rounded-full shadow" aria-label="Change profile picture" onclick="alert('Profile picture upload modal not yet implemented.')">
+                            <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                        </button>
+                    </div>
+                    <!-- Main Info -->
+                    <div class="flex-1 text-center md:text-left">
+                        <h1 id="fullName" class="text-3xl font-bold text-white">Loading...</h1>
+                        <p id="hallTicket-branch-year" class="text-lg text-blue-300">Hall Ticket • Branch • Year</p>
+                        <p id="location" class="text-sm text-gray-400 mt-1 flex items-center justify-center md:justify-start">
+                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                            Location
+                        </p>
+                        <p id="aboutLine" class="text-gray-300 mt-3 text-base">"About line..."</p>
+                        
+                        <!-- Contact Links -->
+                        <div class="mt-4 flex justify-center md:justify-start space-x-4" id="contact-links">
+                            <!-- Links will be injected here -->
+                        </div>
+                    </div>
+                    <!-- Top Edit Button -->
+                    <button class="edit-btn absolute top-4 right-4 p-2 bg-gray-700 hover:bg-gray-600 rounded-lg"
+                            onclick="openSimpleEditModal('aboutLine', 'About Line', 'text')">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                <!-- Left Column (Details) -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Personal Details -->
+                    <div class="bg-gray-800 rounded-2xl shadow-lg p-5 relative">
+                        <h3 class="text-lg font-semibold text-white mb-3">Personal Details</h3>
+                        <button class="edit-btn absolute top-4 right-4 p-2 bg-gray-700 hover:bg-gray-600 rounded-lg"
+                                onclick="openSimpleEditModal('gpa', 'GPA', 'text')">
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                        </button>
+                        <div class="space-y-2 text-sm text-gray-300">
+                            <p><strong>Email:</strong> <span id="email" class="break-all">...</span></p>
+                            <p><strong>Phone:</strong> <span id="phone">...</span></p>
+                            <p><strong>Birth Date:</strong> <span id="birthDate">...</span></p>
+                            <p><strong>GPA:</strong> <span id="gpa" class="font-bold text-blue-300">...</span></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Skills -->
+                    <div class="bg-gray-800 rounded-2xl shadow-lg p-5 relative">
+                        <h3 class="text-lg font-semibold text-white mb-3">Tech Skills</h3>
+                        <button class="edit-btn absolute top-4 right-4 p-2 bg-gray-700 hover:bg-gray-600 rounded-lg"
+                                onclick="openListEditModal('techSkills', 'Tech Skills')">
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                        </button>
+                        <div id="techSkills" class="flex flex-wrap gap-2">
+                            <!-- Skills injected here -->
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 rounded-2xl shadow-lg p-5 relative">
+                        <h3 class="text-lg font-semibold text-white mb-3">Soft Skills</h3>
+                        <button class="edit-btn absolute top-4 right-4 p-2 bg-gray-700 hover:bg-gray-600 rounded-lg"
+                                onclick="openListEditModal('softSkills', 'Soft Skills')">
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                        </button>
+                        <div id="softSkills" class="flex flex-wrap gap-2">
+                            <!-- Skills injected here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column (Experience & Activity) -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Summary -->
+                    <div class="bg-gray-800 rounded-2xl shadow-lg p-5 relative">
+                        <h3 class="text-lg font-semibold text-white mb-3">Summary</h3>
+                        <button class="edit-btn absolute top-4 right-4 p-2 bg-gray-700 hover:bg-gray-600 rounded-lg"
+                                onclick="openSimpleEditModal('summary', 'Summary', 'textarea')">
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                        </button>
+                        <p id="summary" class="text-gray-300 whitespace-pre-wrap">...</p>
+                    </div>
+
+                    <!-- Sections with list items (Projects, Internships, etc.) -->
+                    <div id="dynamic-sections">
+                        <!-- Sections will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Modals -->
+
+    <!-- Modal 1: Simple Edit (for text/textarea) -->
+    <div id="simple-edit-modal" class="modal fixed inset-0 z-50 items-center justify-center p-4 bg-black bg-opacity-75">
+        <div class="bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg p-6">
+            <h3 id="simple-modal-title" class="text-xl font-semibold text-white mb-4">Edit Section</h3>
+            <form id="simple-edit-form">
+                <input type="hidden" id="simple-modal-field">
+                <div id="simple-modal-input-container">
+                    <!-- Input or Textarea will be injected here -->
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" class="px-5 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium" onclick="closeModal('simple-edit-modal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal 2: List Edit (for skills, etc.) -->
+    <div id="list-edit-modal" class="modal fixed inset-0 z-50 items-center justify-center p-4 bg-black bg-opacity-75">
+        <div class="bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg p-6">
+            <h3 id="list-modal-title" class="text-xl font-semibold text-white mb-4">Edit List</h3>
+            <form id="list-edit-form">
+                <input type="hidden" id="list-modal-field">
+                <!-- List items will be here -->
+                <div id="list-modal-items" class="space-y-2 max-h-60 overflow-y-auto pr-2">
+                    <!-- e.g., <div class="flex items-center justify-between"><span>Python</span><button>Remove</button></div> -->
+                </div>
+                <!-- Add new item -->
+                <div class="flex space-x-2 mt-4">
+                    <input type="text" id="list-modal-new-item" placeholder="Add new item..." class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm">
+                    <button type="button" id="list-modal-add-btn" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium">Add</button>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" class="px-5 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium" onclick="closeModal('list-edit-modal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- *** NEW: Modal 3: Complex Edit (for Projects, Internships, etc.) *** -->
+    <div id="complex-edit-modal" class="modal fixed inset-0 z-50 items-center justify-center p-4 bg-black bg-opacity-75">
+        <div class="bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl p-6">
+            <h3 id="complex-modal-title" class="text-xl font-semibold text-white mb-4">Edit Section</h3>
+            <form id="complex-edit-form">
+                <input type="hidden" id="complex-modal-field">
+                
+                <!-- List of existing items -->
+                <div id="complex-modal-items" class="space-y-3 max-h-60 overflow-y-auto pr-2 mb-4">
+                    <!-- Complex items will be injected here -->
+                </div>
+
+                <!-- Add new item form -->
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <h4 class="text-md font-semibold text-white mb-2">Add New Entry</h4>
+                    <div class="space-y-2">
+                        <input type="text" id="complex-modal-new-title" placeholder="Title (e.g., Project Name, Company Name)" class="w-full bg-gray-600 border border-gray-500 rounded-lg p-2 text-sm">
+                        <textarea id="complex-modal-new-desc" placeholder="Description..." rows="3" class="w-full bg-gray-600 border border-gray-500 rounded-lg p-2 text-sm"></textarea>
+                    </div>
+                    <button type="button" id="complex-modal-add-btn" class="mt-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium">Add Entry</button>
+                </div>
+                
+                <!-- Main controls -->
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" class="px-5 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium" onclick="closeModal('complex-edit-modal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        // --- CONFIG ---
+        const API_BASE_URL = 'http://localhost:5000';
+        let currentProfileData = {}; // Store profile data globally
+        let myInfo = {}; // Store logged-in user's info
+
+        // --- ELEMENTS ---
+        const loadingState = document.getElementById('loading-state');
+        const profileContent = document.getElementById('profile-content');
+        const contactLinks = document.getElementById('contact-links');
+
+        /**
+         * 1. Check Auth & Get Logged-in User's Info
+         */
+        async function getMyInfo() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = './login.html';
+                return null;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/users/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = './login.html';
+                    return null;
+                }
+                if (!response.ok) throw new Error('Could not fetch user data');
+                const data = await response.json();
+                myInfo = data;
+                document.getElementById('nav-profile-pic').src = data.profilePicUrl.startsWith('http')
+                    ? data.profilePicUrl
+                    : `${API_BASE_URL}/${data.profilePicUrl}`;
+                return { token, myInfo };
+            } catch (error) {
+                console.error(error);
+                localStorage.removeItem('authToken');
+                window.location.href = './login.html';
+                return null;
+            }
+        }
+
+        /**
+         * 2. Fetch Profile Data
+         */
+        async function fetchProfileData(token, targetUserId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/profile/${targetUserId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Profile not found');
+                }
+                const data = await response.json();
+                currentProfileData = data;
+                return data;
+            } catch (error) {
+                console.error(error);
+                loadingState.innerHTML = `<p class="text-red-400">${error.message}</p>`;
+                return null;
+            }
+        }
+
+        /**
+         * 3. Render Profile Data
+         */
+        function renderProfile(profile) {
+            if (myInfo.user_id === profile.user_id) {
+                document.body.classList.add('is-owner');
+            }
+            document.getElementById('profilePic').src = profile.profilePicUrl
+                ? `${API_BASE_URL}/${profile.profilePicUrl}`
+                : `https://placehold.co/150x150/4F46E5/FFFFFF?text=${profile.fullName[0]}`;
+            document.getElementById('fullName').textContent = profile.fullName;
+            document.getElementById('hallTicket-branch-year').textContent = 
+                `${profile.hallTicket || '...'} • ${profile.branch || '...'} • ${profile.year || '...'}`;
+            document.getElementById('location').innerHTML = 
+                `<svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                ${profile.location || '...'}`;
+            document.getElementById('aboutLine').textContent = profile.aboutLine || '"..."';
+            
+            // --- Contact Links (with new copy-to-clipboard) ---
+            contactLinks.innerHTML = '';
+            if (profile.email) {
+                contactLinks.innerHTML += createCopyButton(
+                    profile.email, 'Email',
+                    `<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.161V6a2 2 0 00-2-2H3z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" /></svg>`
+                );
+            }
+            if (profile.linkedin) {
+                contactLinks.innerHTML += `<a href="${profile.linkedin}" target="_blank" class="text-gray-400 hover:text-blue-400" title="LinkedIn"><svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.708-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/></svg></a>`;
+            }
+            if (profile.github) {
+                contactLinks.innerHTML += `<a href="${profile.github}" target="_blank" class="text-gray-400 hover:text-blue-400" title="GitHub"><svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>`;
+            }
+
+            // --- Left Column ---
+            document.getElementById('email').textContent = profile.email || '...';
+            document.getElementById('phone').textContent = profile.phone || '...';
+            document.getElementById('birthDate').textContent = profile.birthDate ? new Date(profile.birthDate).toLocaleDateString() : '...';
+            document.getElementById('gpa').textContent = profile.gpa || '...';
+            
+            renderSkillList('techSkills', profile.techSkills);
+            renderSkillList('softSkills', profile.softSkills);
+
+            // --- Right Column ---
+            document.getElementById('summary').textContent = profile.summary || '...';
+            
+            // --- Dynamic List Sections (with new edit handlers) ---
+            const dynamicSections = document.getElementById('dynamic-sections');
+            dynamicSections.innerHTML = '';
+            renderDynamicSection(dynamicSections, 'Projects', 'projects', profile.projects, 'complex');
+            renderDynamicSection(dynamicSections, 'Internships', 'internships', profile.internships, 'complex');
+            renderDynamicSection(dynamicSections, 'Achievements', 'achievements', profile.achievements, 'list');
+            renderDynamicSection(dynamicSections, 'Publications / Posts', 'publications', profile.publications, 'list');
+            renderDynamicSection(dynamicSections, 'Campus Life', 'campusLife', profile.campusLife, 'list');
+            renderDynamicSection(dynamicSections, 'Ideas', 'ideas', profile.ideas, 'list');
+
+            loadingState.classList.add('hidden');
+            profileContent.classList.remove('hidden');
+        }
+
+        function renderSkillList(elementId, skills) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            if (skills && skills.length > 0) {
+                skills.forEach(skill => {
+                    const pill = document.createElement('span');
+                    pill.className = 'bg-gray-700 text-blue-300 text-xs font-medium px-3 py-1 rounded-full';
+                    pill.textContent = skill;
+                    container.appendChild(pill);
+                });
+            } else {
+                container.innerHTML = '<span class="text-sm text-gray-400">No skills added.</span>';
+            }
+        }
+        
+        function renderDynamicSection(container, title, fieldName, items, editType) {
+            const section = document.createElement('div');
+            section.className = 'bg-gray-800 rounded-2xl shadow-lg p-5 relative';
+            let itemsHtml = '';
+            
+            if (items && items.length > 0) {
+                itemsHtml = '<ul class="list-disc list-inside space-y-3 text-gray-300">';
+                items.forEach(item => {
+                    if (typeof item === 'string') {
+                        itemsHtml += `<li>${item}</li>`;
+                    } else { // Assumes object { title, description }
+                        itemsHtml += `
+                            <li>
+                                <strong class="text-white">${item.title || 'Entry'}</strong>
+                                <p class="text-sm ml-4">${item.description || '...'}</p>
+                            </li>`;
+                    }
+                });
+                itemsHtml += '</ul>';
+            } else {
+                itemsHtml = `<p class="text-sm text-gray-400">No ${fieldName} added.</p>`;
+            }
+
+            // *** NEW: Set onclick handler based on editType ***
+            let editHandler = '';
+            if (editType === 'list') {
+                editHandler = `openListEditModal('${fieldName}', '${title}')`;
+            } else if (editType === 'complex') {
+                editHandler = `openComplexEditModal('${fieldName}', '${title}')`;
+            }
+
+            section.innerHTML = `
+                <h3 class="text-lg font-semibold text-white mb-3">${title}</h3>
+                <button class="edit-btn absolute top-4 right-4 p-2 bg-gray-700 hover:bg-gray-600 rounded-lg"
+                        onclick="${editHandler}">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                </button>
+                ${itemsHtml}
+            `;
+            container.appendChild(section);
+        }
+        
+        // --- MODAL & EDITING LOGIC ---
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('is-open');
+        }
+
+        // --- Simple Edit Modal (About, GPA, etc.) ---
+        function openSimpleEditModal(field, title, inputType) {
+            const modal = document.getElementById('simple-edit-modal');
+            document.getElementById('simple-modal-title').textContent = `Edit ${title}`;
+            document.getElementById('simple-modal-field').value = field;
+            const inputContainer = document.getElementById('simple-modal-input-container');
+            const currentValue = currentProfileData[field] || '';
+            if (inputType === 'textarea') {
+                inputContainer.innerHTML = `<textarea id="simple-modal-value" rows="5" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm">${currentValue}</textarea>`;
+            } else {
+                inputContainer.innerHTML = `<input type="text" id="simple-modal-value" value="${currentValue}" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm">`;
+            }
+            modal.classList.add('is-open');
+        }
+        
+        document.getElementById('simple-edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const field = document.getElementById('simple-modal-field').value;
+            const value = document.getElementById('simple-modal-value').value;
+            await saveProfileUpdate(field, value);
+            closeModal('simple-edit-modal');
+        });
+        
+        // --- List Edit Modal (Skills) ---
+        function openListEditModal(field, title) {
+            const modal = document.getElementById('list-edit-modal');
+            document.getElementById('list-modal-title').textContent = `Edit ${title}`;
+            document.getElementById('list-modal-field').value = field;
+            const itemsContainer = document.getElementById('list-modal-items');
+            itemsContainer.innerHTML = '';
+            const currentItems = currentProfileData[field] || [];
+            currentItems.forEach(item => itemsContainer.appendChild(createListItem(item)));
+            modal.classList.add('is-open');
+        }
+        
+        function createListItem(item) {
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between p-2 bg-gray-700 rounded';
+            div.innerHTML = `<span class="text-sm">${item}</span>
+                             <button type="button" class="text-red-400 hover:text-red-300" onclick="this.parentElement.remove()">
+                                 <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                             </button>`;
+            return div;
+        }
+
+        document.getElementById('list-modal-add-btn').addEventListener('click', () => {
+            const input = document.getElementById('list-modal-new-item');
+            if (input.value) {
+                document.getElementById('list-modal-items').appendChild(createListItem(input.value));
+                input.value = '';
+            }
+        });
+
+        document.getElementById('list-edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const field = document.getElementById('list-modal-field').value;
+            const items = [];
+            document.getElementById('list-modal-items').querySelectorAll('span').forEach(span => items.push(span.textContent));
+            await saveProfileUpdate(field, items);
+            closeModal('list-edit-modal');
+        });
+
+        // --- *** NEW: Complex Edit Modal (Projects, Internships) *** ---
+        function openComplexEditModal(field, title) {
+            const modal = document.getElementById('complex-edit-modal');
+            document.getElementById('complex-modal-title').textContent = `Edit ${title}`;
+            document.getElementById('complex-modal-field').value = field;
+            
+            const itemsContainer = document.getElementById('complex-modal-items');
+            itemsContainer.innerHTML = '';
+            const currentItems = currentProfileData[field] || [];
+            
+            currentItems.forEach(item => {
+                itemsContainer.appendChild(createComplexListItem(item.title, item.description));
+            });
+            
+            modal.classList.add('is-open');
+        }
+
+        function createComplexListItem(title, description) {
+            const div = document.createElement('div');
+            div.className = 'p-3 bg-gray-700 rounded';
+            div.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <strong class="text-white">${title}</strong>
+                    <button type="button" class="text-red-400 hover:text-red-300" onclick="this.closest('.p-3').remove()">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-300 mt-1">${description}</p>
+                <input type="hidden" class="item-title" value="${title}">
+                <input type="hidden" class="item-description" value="${description}">
+            `;
+            return div;
+        }
+
+        document.getElementById('complex-modal-add-btn').addEventListener('click', () => {
+            const titleInput = document.getElementById('complex-modal-new-title');
+            const descInput = document.getElementById('complex-modal-new-desc');
+            if (titleInput.value && descInput.value) {
+                document.getElementById('complex-modal-items').appendChild(
+                    createComplexListItem(titleInput.value, descInput.value)
+                );
+                titleInput.value = '';
+                descInput.value = '';
+            }
+        });
+
+        document.getElementById('complex-edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const field = document.getElementById('complex-modal-field').value;
+            const items = [];
+            document.getElementById('complex-modal-items').querySelectorAll('.p-3').forEach(itemEl => {
+                items.push({
+                    title: itemEl.querySelector('.item-title').value,
+                    description: itemEl.querySelector('.item-description').value
+                });
+            });
+            await saveProfileUpdate(field, items);
+            closeModal('complex-edit-modal');
+        });
+
+        /**
+         * 4. Save Update to API
+         */
+        async function saveProfileUpdate(field, value) {
+            const token = localStorage.getItem('authToken');
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/profile/me`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ field: field, value: value })
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Failed to save');
+                }
+                currentProfileData[field] = value;
+                renderProfile(currentProfileData);
+            } catch (error) {
+                console.error('Save error:', error);
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        /**
+         * 5. *** NEW: Copy to Clipboard Utility ***
+         */
+        function createCopyButton(textToCopy, title, svgIcon) {
+            const tooltipId = `tooltip-for-${title.toLowerCase()}`;
+            return `
+                <div class="tooltip" onmouseleave="hideTooltip(this)">
+                    <span class="tooltip-text" id="${tooltipId}">Copied!</span>
+                    <button type="button" class="text-gray-400 hover:text-blue-400" title="${title}"
+                            onclick="copyToClipboard('${textToCopy}', '${tooltipId}')">
+                        ${svgIcon}
+                    </button>
+                </div>
+            `;
+        }
+
+        function copyToClipboard(text, tooltipId) {
+            // Use execCommand as a fallback for clipboard API in iframes
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                
+                // Show tooltip
+                const tooltip = document.getElementById(tooltipId);
+                if (tooltip) tooltip.parentElement.classList.add('show');
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+            }
+        }
+
+        function hideTooltip(el) {
+            el.classList.remove('show');
+        }
+
+        // --- RUN ON PAGE LOAD ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const auth = await getMyInfo();
+            if (!auth) return;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetUserId = urlParams.get('id') || auth.myInfo.user_id;
+
+            const profileData = await fetchProfileData(auth.token, targetUserId);
+            
+            if (profileData) {
+                renderProfile(profileData);
+            }
+
+            document.getElementById('nav-profile-btn').addEventListener('click', () => {
+                window.location.href = `./profile.html?id=${auth.myInfo.user_id}`;
+            });
+        });
+    </script>
+</body>
+</html>
+
