@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-md p-8 space-y-8 bg-gray-800 rounded-2xl shadow-lg">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-bold tracking-tight">
+                Sign in to your account
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-400">
+                Welcome back!
+            </p>
+        </div>
+        
+        <form id="login-form" class="space-y-6">
+            <!-- Error Message -->
+            <div id="error-message" class="hidden text-sm text-center text-red-400 p-3 bg-red-900 bg-opacity-30 rounded-lg">
+            </div>
+            
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-300 mb-1">Email address</label>
+                <input id="email" name="email" type="email" autocomplete="email" required
+                       class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required
+                       class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div>
+                <button type="submit" id="login-btn"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    Sign in
+                </button>
+            </div>
+        </form>
+
+        <p class="text-sm text-center text-gray-400">
+            Not a member?
+            <a href="register.html" class="font-medium text-blue-400 hover:text-blue-300">
+                Register now
+            </a>
+        </p>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const errorDiv = document.getElementById('error-message');
+        const loginBtn = document.getElementById('login-btn');
+        const API_BASE_URL = 'http://localhost:5000'; // Make sure this matches your API
+
+        // Check if user is already logged in
+        if (localStorage.getItem('authToken')) {
+            // If they are, send them to the home page
+            window.location.href = 'home.html';
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = '';
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing in...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // This will catch "Invalid credentials" and "Pending approval"
+                    throw new Error(data.error || 'An unknown error occurred');
+                }
+
+                // --- SUCCESS! ---
+                // Save the token to localStorage. This is the "keycard"
+                // that proves the user is logged in.
+                localStorage.setItem('authToken', data.token);
+
+                // Send them to the home page
+                window.location.href = 'home.html';
+
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign in';
+            }
+        });
+    </script>
+
+</body>
+</html>
